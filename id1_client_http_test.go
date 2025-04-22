@@ -70,6 +70,37 @@ func TestCRUMD(t *testing.T) {
 	}
 }
 
+func TestExec(t *testing.T) {
+	id := setupTestId(t)
+	testKey := KK(id, "test", "one")
+	id1, _ := NewHttpClient(apiUrl)
+	if err := id1.Authenticate(id, testPrivateKey); err != nil {
+		t.Errorf("auth err %s", err)
+	}
+	cmdSet := Command{
+		Op:   Set,
+		Key:  testKey,
+		Data: []byte("test"),
+	}
+	cmdGet := Command{
+		Op:  Get,
+		Key: testKey,
+	}
+	cmdDel := Command{
+		Op:  Del,
+		Key: testKey,
+	}
+	if _, err := id1.Exec(cmdSet); err != nil {
+		t.Errorf("set err %s", err)
+	}
+	if data, err := id1.Exec(cmdGet); err != nil || string(data) != "test" {
+		t.Errorf("get err %s", err)
+	}
+	if _, err := id1.Exec(cmdDel); err != nil {
+		t.Errorf("del err %s", err)
+	}
+}
+
 func TestSend(t *testing.T) {
 	id := setupTestId(t)
 	testKey := KK(id, "test", "one")

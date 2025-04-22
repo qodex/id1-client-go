@@ -9,6 +9,7 @@ type Id1Client interface {
 	AddListener(listener func(cmd Command), listenerId string) string
 	RemoveListener(listenerId string)
 	Send(cmd Command) error
+	Exec(cmd Command) ([]byte, error)
 	Get(key Id1Key) ([]byte, error)
 	Del(key Id1Key) error
 	Set(key Id1Key, data []byte) error

@@ -9,10 +9,12 @@ import (
 func (t *id1ClientHttp) readWebsocket() {
 	for {
 		if _, message, err := t.conn.ReadMessage(); err != nil {
-			log.Printf("socket error: %s", err)
+			log.Printf("socket closed")
 			break
 		} else if cmd, err := ParseCommand(message); err != nil {
 			log.Printf("unknown command: %s", string(message))
+		} else if cmd.Op == Get && cmd.Key.Name == ".ping" {
+			t.cmdOut <- Command{Op: Set, Key: KK(t.id, ".pong")}
 		} else {
 			t.cmdIn <- cmd
 		}

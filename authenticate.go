@@ -24,7 +24,7 @@ func (t *id1ClientHttp) Authenticate(id string, privateKeyPEM string) error {
 
 	if res, err := t.doRes(req); err == nil {
 		return ErrUnexpected
-	} else if errors.Is(err, ErrNotFound) {
+	} else if !errors.Is(err, ErrNotAuthenticated) {
 		return err
 	} else if resBodyBase64, err := io.ReadAll(res.Body); err != nil {
 		return err

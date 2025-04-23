@@ -7,7 +7,7 @@ import (
 	"net/url"
 )
 
-func (t *id1ClientHttp) Connect() error {
+func (t *id1ClientHttp) Connect() (chan bool, error) {
 	header := http.Header{
 		"Authorization": []string{t.token},
 	}
@@ -21,13 +21,14 @@ func (t *id1ClientHttp) Connect() error {
 		Path:   fmt.Sprintf("%s/ws", t.id),
 		Host:   t.url.Host,
 	}
+	disconnectSignal := make(chan bool)
 	if conn, _, err := websocket.DefaultDialer.Dial(url.String(), header); err != nil {
-		return err
+		return nil, err
 	} else {
 		t.conn = conn
-		go t.readWebsocket()
-		go t.writeWebsocket()
+		go t.readWebsocket(disconnectSignal)
+		go t.writeWebsocket(disconnectSignal)
 		go t.notifyListeners()
-		return nil
+		return disconnectSignal, nil
 	}
 }

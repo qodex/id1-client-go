@@ -107,7 +107,7 @@ func TestSend(t *testing.T) {
 	id1, _ := NewHttpClient(apiUrl)
 	if err := id1.Authenticate(id, testPrivateKey); err != nil {
 		t.Errorf("auth err %s", err)
-	} else if err := id1.Connect(); err != nil {
+	} else if _, err := id1.Connect(); err != nil {
 		t.Errorf("err connecting %s", err)
 	} else if err := id1.Send(Command{
 		Op:   Set,
@@ -139,7 +139,7 @@ func TestWebSocket(t *testing.T) {
 	listenerClient, _ := NewHttpClient(apiUrl)
 	if err := listenerClient.Authenticate(listenerId, testPrivateKey); err != nil {
 		t.Errorf("auth error %s", err)
-	} else if err := listenerClient.Connect(); err != nil {
+	} else if _, err := listenerClient.Connect(); err != nil {
 		t.Errorf("ws connect err %s", err)
 	} else if err := listenerClient.Set(KK(listenerId, ".set"), []byte("*")); err != nil {
 		t.Errorf("set err %s", err)
@@ -190,7 +190,7 @@ func TestWebSocketBreakPoint(t *testing.T) {
 				id1, _ := NewHttpClient(apiUrl)
 				if err := id1.Authenticate(id, testPrivateKey); err != nil {
 					t.Errorf("auth error %s", err)
-				} else if err := id1.Connect(); err != nil {
+				} else if _, err := id1.Connect(); err != nil {
 					t.Errorf("ws connect err %s", err)
 				}
 			}()

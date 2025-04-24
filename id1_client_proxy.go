@@ -22,7 +22,7 @@ func (t *Id1ClientProxy) AddPostprocessor(fn func(data []byte, err error) ([]byt
 	t.postprocessors = append(t.postprocessors, fn)
 }
 
-func (t *Id1ClientProxy) preprocess(cmd *Command) error {
+func (t Id1ClientProxy) preprocess(cmd *Command) error {
 	if cmd.Args == nil {
 		cmd.Args = map[string]string{}
 	}
@@ -34,7 +34,7 @@ func (t *Id1ClientProxy) preprocess(cmd *Command) error {
 	return nil
 }
 
-func (t *Id1ClientProxy) postprocess(data []byte, err error) ([]byte, error) {
+func (t Id1ClientProxy) postprocess(data []byte, err error) ([]byte, error) {
 	for _, postprocessor := range t.postprocessors {
 		if err != nil {
 			return []byte{}, err
@@ -44,15 +44,15 @@ func (t *Id1ClientProxy) postprocess(data []byte, err error) ([]byte, error) {
 	return data, err
 }
 
-func (t *Id1ClientProxy) Authenticate(id string, privateKey string) error {
+func (t Id1ClientProxy) Authenticate(id string, privateKey string) error {
 	return t.client.Authenticate(id, privateKey)
 }
 
-func (t *Id1ClientProxy) Connect() (chan bool, error) {
+func (t Id1ClientProxy) Connect() (chan bool, error) {
 	return t.client.Connect()
 }
 
-func (t *Id1ClientProxy) Close() {
+func (t Id1ClientProxy) Close() {
 	t.client.Close()
 }
 
@@ -60,11 +60,11 @@ func (t *Id1ClientProxy) AddListener(listener func(cmd Command), listenerId stri
 	return t.client.AddListener(listener, listenerId)
 }
 
-func (t *Id1ClientProxy) RemoveListener(listenerId string) {
+func (t Id1ClientProxy) RemoveListener(listenerId string) {
 	t.client.RemoveListener(listenerId)
 }
 
-func (t *Id1ClientProxy) Send(cmd Command) error {
+func (t Id1ClientProxy) Send(cmd Command) error {
 	if err := t.preprocess(&cmd); err != nil {
 		return err
 	} else {
@@ -72,7 +72,7 @@ func (t *Id1ClientProxy) Send(cmd Command) error {
 	}
 }
 
-func (t *Id1ClientProxy) Exec(cmd Command) ([]byte, error) {
+func (t Id1ClientProxy) Exec(cmd Command) ([]byte, error) {
 	if err := t.preprocess(&cmd); err != nil {
 		return []byte{}, err
 	} else {
@@ -81,7 +81,7 @@ func (t *Id1ClientProxy) Exec(cmd Command) ([]byte, error) {
 	}
 }
 
-func (t *Id1ClientProxy) Get(key Id1Key) ([]byte, error) {
+func (t Id1ClientProxy) Get(key Id1Key) ([]byte, error) {
 	cmd := &Command{Op: Get, Key: key}
 	if err := t.preprocess(cmd); err != nil {
 		return []byte{}, err
@@ -91,7 +91,7 @@ func (t *Id1ClientProxy) Get(key Id1Key) ([]byte, error) {
 	}
 }
 
-func (t *Id1ClientProxy) Del(key Id1Key) error {
+func (t Id1ClientProxy) Del(key Id1Key) error {
 	cmd := &Command{Op: Del, Key: key}
 	if err := t.preprocess(cmd); err != nil {
 		return err
@@ -99,7 +99,7 @@ func (t *Id1ClientProxy) Del(key Id1Key) error {
 		return t.client.Del(cmd.Key)
 	}
 }
-func (t *Id1ClientProxy) Set(key Id1Key, data []byte) error {
+func (t Id1ClientProxy) Set(key Id1Key, data []byte) error {
 	cmd := &Command{Op: Set, Key: key, Data: data}
 	if err := t.preprocess(cmd); err != nil {
 		return err
@@ -108,7 +108,7 @@ func (t *Id1ClientProxy) Set(key Id1Key, data []byte) error {
 	}
 }
 
-func (t *Id1ClientProxy) Add(key Id1Key, data []byte) error {
+func (t Id1ClientProxy) Add(key Id1Key, data []byte) error {
 	cmd := &Command{Op: Add, Key: key, Data: data}
 	if err := t.preprocess(cmd); err != nil {
 		return err
@@ -117,7 +117,7 @@ func (t *Id1ClientProxy) Add(key Id1Key, data []byte) error {
 	}
 }
 
-func (t *Id1ClientProxy) Mov(key, tgtKey Id1Key) error {
+func (t Id1ClientProxy) Mov(key, tgtKey Id1Key) error {
 	cmd := &Command{Op: Mov, Key: key, Data: []byte(tgtKey.String())}
 	if err := t.preprocess(cmd); err != nil {
 		return err
@@ -126,7 +126,7 @@ func (t *Id1ClientProxy) Mov(key, tgtKey Id1Key) error {
 	}
 }
 
-func (t *Id1ClientProxy) List(key Id1Key, options ListOptions) (map[string][]byte, error) {
+func (t Id1ClientProxy) List(key Id1Key, options ListOptions) (map[string][]byte, error) {
 	cmd := &Command{Op: Get, Key: key, Args: options.Map()}
 	if err := t.preprocess(cmd); err != nil {
 		return map[string][]byte{}, err

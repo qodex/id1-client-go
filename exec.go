@@ -1,6 +1,6 @@
 package id1_client
 
-func (t *id1ClientHttp) Exec(cmd Command) ([]byte, error) {
+func (t id1ClientHttp) Exec(cmd Command) ([]byte, error) {
 	switch cmd.Op {
 	case Get:
 		return t.Get(cmd.Key)

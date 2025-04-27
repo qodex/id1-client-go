@@ -9,7 +9,7 @@ import (
 	"net/url"
 )
 
-func (t *id1ClientHttp) List(key Id1Key, options ListOptions) (map[string][]byte, error) {
+func (t id1ClientHttp) List(key Id1Key, options ListOptions) (map[string][]byte, error) {
 	list := map[string][]byte{}
 	params := url.Values{}
 	for k := range options.Map() {

@@ -17,7 +17,8 @@ type Command struct {
 type Op int
 
 const (
-	Set Op = iota
+	Unknown Op = iota
+	Set
 	Add
 	Get
 	Del
@@ -48,7 +49,11 @@ func (t Op) String() string {
 }
 
 func op(s string) Op {
-	return nameOp[s]
+	if op, ok := nameOp[s]; ok {
+		return op
+	} else {
+		return Unknown
+	}
 }
 
 func (t Command) Bytes() []byte {

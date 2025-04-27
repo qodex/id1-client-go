@@ -1,32 +1,29 @@
 package id1_client
 
 type Id1ClientProxy struct {
-	client         Id1Client
-	preprocessors  []func(cmd *Command) error
-	postprocessors []func(data []byte, err error) ([]byte, error)
+	client         *Id1Client
+	preprocessors  *[]func(cmd *Command) error
+	postprocessors *[]func(data []byte, err error) ([]byte, error)
 }
 
-func NewId1ClientProxy(client Id1Client) Id1ClientProxy {
-	return Id1ClientProxy{
-		client:         client,
-		preprocessors:  []func(cmd *Command) error{},
-		postprocessors: []func(data []byte, err error) ([]byte, error){},
+func NewId1ClientProxy(
+	client Id1Client,
+	preprocessors []func(cmd *Command) error,
+	postprocessors []func(data []byte, err error) ([]byte, error),
+) Id1Client {
+	proxy := Id1ClientProxy{
+		client:         &client,
+		preprocessors:  &preprocessors,
+		postprocessors: &postprocessors,
 	}
-}
-
-func (t *Id1ClientProxy) AddPreprocessor(fn func(cmd *Command) error) {
-	t.preprocessors = append(t.preprocessors, fn)
-}
-
-func (t *Id1ClientProxy) AddPostprocessor(fn func(data []byte, err error) ([]byte, error)) {
-	t.postprocessors = append(t.postprocessors, fn)
+	return &proxy
 }
 
 func (t Id1ClientProxy) preprocess(cmd *Command) error {
 	if cmd.Args == nil {
 		cmd.Args = map[string]string{}
 	}
-	for _, preprocessor := range t.preprocessors {
+	for _, preprocessor := range *t.preprocessors {
 		if err := preprocessor(cmd); err != nil {
 			return err
 		}
@@ -35,7 +32,7 @@ func (t Id1ClientProxy) preprocess(cmd *Command) error {
 }
 
 func (t Id1ClientProxy) postprocess(data []byte, err error) ([]byte, error) {
-	for _, postprocessor := range t.postprocessors {
+	for _, postprocessor := range *t.postprocessors {
 		if err != nil {
 			return []byte{}, err
 		}
@@ -44,31 +41,37 @@ func (t Id1ClientProxy) postprocess(data []byte, err error) ([]byte, error) {
 	return data, err
 }
 
-func (t Id1ClientProxy) Authenticate(id string, privateKey string) error {
-	return t.client.Authenticate(id, privateKey)
+func (t *Id1ClientProxy) Authenticate(id string, privateKey string) error {
+	cl := *t.client
+	return cl.Authenticate(id, privateKey)
 }
 
-func (t Id1ClientProxy) Connect() (chan bool, error) {
-	return t.client.Connect()
+func (t *Id1ClientProxy) Connect() (chan bool, error) {
+	cl := *t.client
+	return cl.Connect()
 }
 
-func (t Id1ClientProxy) Close() {
-	t.client.Close()
+func (t *Id1ClientProxy) Close() {
+	cl := *t.client
+	cl.Close()
 }
 
 func (t *Id1ClientProxy) AddListener(listener func(cmd Command), listenerId string) string {
-	return t.client.AddListener(listener, listenerId)
+	cl := *t.client
+	return cl.AddListener(listener, listenerId)
 }
 
-func (t Id1ClientProxy) RemoveListener(listenerId string) {
-	t.client.RemoveListener(listenerId)
+func (t *Id1ClientProxy) RemoveListener(listenerId string) {
+	cl := *t.client
+	cl.RemoveListener(listenerId)
 }
 
 func (t Id1ClientProxy) Send(cmd Command) error {
 	if err := t.preprocess(&cmd); err != nil {
 		return err
 	} else {
-		return t.client.Send(cmd)
+		cl := *t.client
+		return cl.Send(cmd)
 	}
 }
 
@@ -76,7 +79,8 @@ func (t Id1ClientProxy) Exec(cmd Command) ([]byte, error) {
 	if err := t.preprocess(&cmd); err != nil {
 		return []byte{}, err
 	} else {
-		data, err := t.client.Exec(cmd)
+		cl := *t.client
+		data, err := cl.Exec(cmd)
 		return t.postprocess(data, err)
 	}
 }
@@ -86,7 +90,8 @@ func (t Id1ClientProxy) Get(key Id1Key) ([]byte, error) {
 	if err := t.preprocess(cmd); err != nil {
 		return []byte{}, err
 	} else {
-		data, err := t.client.Get(cmd.Key)
+		cl := *t.client
+		data, err := cl.Get(cmd.Key)
 		return t.postprocess(data, err)
 	}
 }
@@ -96,7 +101,8 @@ func (t Id1ClientProxy) Del(key Id1Key) error {
 	if err := t.preprocess(cmd); err != nil {
 		return err
 	} else {
-		return t.client.Del(cmd.Key)
+		cl := *t.client
+		return cl.Del(cmd.Key)
 	}
 }
 func (t Id1ClientProxy) Set(key Id1Key, data []byte) error {
@@ -104,7 +110,8 @@ func (t Id1ClientProxy) Set(key Id1Key, data []byte) error {
 	if err := t.preprocess(cmd); err != nil {
 		return err
 	} else {
-		return t.client.Set(cmd.Key, cmd.Data)
+		cl := *t.client
+		return cl.Set(cmd.Key, cmd.Data)
 	}
 }
 
@@ -113,7 +120,8 @@ func (t Id1ClientProxy) Add(key Id1Key, data []byte) error {
 	if err := t.preprocess(cmd); err != nil {
 		return err
 	} else {
-		return t.client.Add(cmd.Key, cmd.Data)
+		cl := *t.client
+		return cl.Add(cmd.Key, cmd.Data)
 	}
 }
 
@@ -122,7 +130,8 @@ func (t Id1ClientProxy) Mov(key, tgtKey Id1Key) error {
 	if err := t.preprocess(cmd); err != nil {
 		return err
 	} else {
-		return t.client.Mov(cmd.Key, K(string(cmd.Data)))
+		cl := *t.client
+		return cl.Mov(cmd.Key, K(string(cmd.Data)))
 	}
 }
 
@@ -131,9 +140,9 @@ func (t Id1ClientProxy) List(key Id1Key, options ListOptions) (map[string][]byte
 	if err := t.preprocess(cmd); err != nil {
 		return map[string][]byte{}, err
 	} else {
-		options := &ListOptions{}
-		options.Parse(cmd.Args)
-		if list, err := t.client.List(cmd.Key, *options); err != nil {
+		opts := MapListOptions(cmd.Args)
+		cl := *t.client
+		if list, err := cl.List(cmd.Key, opts); err != nil {
 			return map[string][]byte{}, err
 		} else {
 			processedList := map[string][]byte{}

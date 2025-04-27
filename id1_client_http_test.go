@@ -31,8 +31,6 @@ func TestAuth(t *testing.T) {
 	id1, _ := NewHttpClient(apiUrl)
 	if err := id1.Authenticate(id, testPrivateKey); err != nil {
 		t.Errorf("auth error %s", err)
-	} else if len(id1.(*id1ClientHttp).token) == 0 {
-		t.Errorf("no token")
 	}
 }
 

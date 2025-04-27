@@ -15,11 +15,11 @@ import (
 )
 
 func (t *id1ClientHttp) Authenticate(id string, privateKeyPEM string) error {
-	t.id = id
-	t.privateKey = privateKeyPEM
+	t.id = &id
+	t.privateKey = &privateKeyPEM
 
 	url := t.url
-	url.Path = fmt.Sprintf("%s/auth", t.id)
+	url.Path = fmt.Sprintf("%s/auth", *t.id)
 	req, _ := http.NewRequest(http.MethodGet, url.String(), nil)
 
 	if res, err := t.doRes(req); err == nil {
@@ -38,7 +38,8 @@ func (t *id1ClientHttp) Authenticate(id string, privateKeyPEM string) error {
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 		jwtToken, _ := token.SignedString(secret)
-		t.token = fmt.Sprintf("Bearer %s", jwtToken)
+		bearerToken := fmt.Sprintf("Bearer %s", jwtToken)
+		t.token = &bearerToken
 		return nil
 	}
 }

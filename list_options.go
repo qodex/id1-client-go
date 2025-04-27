@@ -31,23 +31,25 @@ func (t ListOptions) Map() map[string]string {
 	return args
 }
 
-func (t *ListOptions) Parse(args map[string]string) {
+func MapListOptions(args map[string]string) ListOptions {
+	opt := ListOptions{}
 	if i, err := strconv.ParseInt(args["limit"], 10, 64); err == nil {
-		t.Limit = int(i)
+		opt.Limit = int(i)
 	} else {
-		t.Limit = 1000
+		opt.Limit = 1000
 	}
 	if i, err := strconv.ParseInt(args["size-limit"], 10, 64); err == nil {
-		t.SizeLimit = int(i)
+		opt.SizeLimit = int(i)
 	} else {
-		t.SizeLimit = 100 * MB
+		opt.SizeLimit = 100 * MB
 	}
 	if i, err := strconv.ParseInt(args["total-size-limit"], 10, 64); err == nil {
-		t.TotalSizeLimit = int(i)
+		opt.TotalSizeLimit = int(i)
 	} else {
-		t.TotalSizeLimit = 100 * MB
+		opt.TotalSizeLimit = 100 * MB
 	}
-	t.Keys = args["keys"] == "true"
-	t.Recursive = args["recursive"] == "true"
-	t.Children = args["children"] == "true"
+	opt.Keys = args["keys"] == "true"
+	opt.Recursive = args["recursive"] == "true"
+	opt.Children = args["children"] == "true"
+	return opt
 }

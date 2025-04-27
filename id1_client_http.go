@@ -11,21 +11,22 @@ import (
 
 type id1ClientHttp struct {
 	url        *url.URL
-	id         string
-	privateKey string
+	id         *string
+	privateKey *string
 	conn       *websocket.Conn
-	token      string
+	token      *string
 	cmdIn      chan Command
 	cmdOut     chan Command
-	listeners  map[string]func(Command)
-	mu         sync.Mutex
+	listeners  *map[string]func(Command)
+	mu         *sync.Mutex
 }
 
 func NewHttpClient(apiEndpoint string) (Id1Client, error) {
 	client := id1ClientHttp{
 		cmdIn:     make(chan Command, 256),
 		cmdOut:    make(chan Command, 256),
-		listeners: map[string]func(Command){},
+		listeners: &map[string]func(Command){},
+		mu:        &sync.Mutex{},
 	}
 	if url, err := url.Parse(apiEndpoint); err != nil {
 		return &client, err
@@ -35,14 +36,15 @@ func NewHttpClient(apiEndpoint string) (Id1Client, error) {
 	}
 }
 
-func (t *id1ClientHttp) do(req *http.Request) error {
+func (t id1ClientHttp) do(req *http.Request) error {
 	_, err := t.doRes(req)
 	return err
 }
 
-func (t *id1ClientHttp) doRes(req *http.Request) (*http.Response, error) {
-	if len(t.token) > 0 {
-		req.Header.Add("Authorization", t.token)
+func (t id1ClientHttp) doRes(req *http.Request) (*http.Response, error) {
+	//log.Println("doRes---", (*req).URL.Path)
+	if t.token != nil && len(*t.token) > 0 {
+		req.Header.Add("Authorization", *t.token)
 	}
 	select {
 	default:

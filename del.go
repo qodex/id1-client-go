@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-func (t *id1ClientHttp) Del(key Id1Key) error {
+func (t id1ClientHttp) Del(key Id1Key) error {
 	url := url.URL{
 		Scheme: t.url.Scheme,
 		Path:   key.String(),
@@ -14,9 +14,6 @@ func (t *id1ClientHttp) Del(key Id1Key) error {
 	req, err := http.NewRequest(http.MethodDelete, url.String(), nil)
 	if err != nil {
 		return err
-	}
-	if len(t.token) > 0 {
-		req.Header.Add("Authorization", t.token)
 	}
 	return t.do(req)
 }

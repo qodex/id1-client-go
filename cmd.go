@@ -57,6 +57,11 @@ func op(s string) Op {
 }
 
 func (t Command) Bytes() []byte {
+	bytes := slices.Concat([]byte(t.String()), []byte("\n"), t.Data)
+	return bytes
+}
+
+func (t Command) String() string {
 	args := url.Values{}
 	for arg := range t.Args {
 		args.Set(arg, t.Args[arg])
@@ -67,12 +72,7 @@ func (t Command) Bytes() []byte {
 		RawQuery: args.Encode(),
 	}
 	command := strings.ReplaceAll(url.String(), "//", "/")
-	bytes := slices.Concat([]byte(command), []byte("\n"), t.Data)
-	return bytes
-}
-
-func (t Command) String() string {
-	return string(t.Bytes())
+	return command
 }
 
 func (t Command) IsEmpty() bool {

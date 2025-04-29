@@ -13,8 +13,6 @@ func (t *id1ClientHttp) readWebsocket(disconnectSignal chan bool) {
 			break
 		} else if cmd, err := ParseCommand(message); err != nil {
 			log.Printf("unknown command: %s", string(message))
-		} else if cmd.Op == Get && cmd.Key.Name == ".ping" {
-			t.cmdOut <- Command{Op: Set, Key: KK(t.id, ".pong")}
 		} else {
 			t.cmdIn <- cmd
 		}

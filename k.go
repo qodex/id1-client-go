@@ -14,11 +14,13 @@ type Id1Key struct {
 }
 
 func (t Id1Key) String() string {
+	str := strings.Join(t.Segments, "/")
 	if len(t.Segments) == 1 {
-		return fmt.Sprintf("%s/", t.Segments[0])
-	} else {
-		return strings.Join(t.Segments, "/")
+		str = str + "/"
 	}
+	str = strings.Trim(str, "\n")
+	str = strings.Trim(str, " ")
+	return str
 }
 
 func K(s string) Id1Key {

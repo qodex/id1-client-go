@@ -1,22 +1,42 @@
 package id1_client
 
 import (
+	"fmt"
 	"slices"
 	"sync"
 )
 
 type Id1ClientMock struct {
+	listeners  map[string]func(Command)
 	disconnect chan bool
-	keys       *map[string][]byte
+	keys       map[string][]byte
+	cmdIn      chan Command
 	mu         *sync.Mutex
 }
 
 func NewId1ClientMock() Id1Client {
+
+	cmdIn := make(chan Command, 8)
+	listeners := map[string]func(Command){}
+	mockKeys := map[string][]byte{}
+
 	mockClient := Id1ClientMock{
-		keys: &map[string][]byte{},
-		mu:   &sync.Mutex{},
+		listeners: listeners,
+		keys:      mockKeys,
+		mu:        &sync.Mutex{},
+		cmdIn:     cmdIn,
 	}
-	return &mockClient
+	client := &mockClient
+
+	go func() {
+		for {
+			cmd := <-client.cmdIn
+			for _, v := range client.listeners {
+				v(cmd)
+			}
+		}
+	}()
+	return client
 }
 
 func (t Id1ClientMock) Authenticate(id string, privateKey string) error {
@@ -33,7 +53,10 @@ func (t Id1ClientMock) Close() {
 }
 
 func (t Id1ClientMock) AddListener(listener func(cmd Command), listenerId string) string {
-	return ""
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	(t.listeners)[listenerId] = listener
+	return listenerId
 }
 
 func (t Id1ClientMock) RemoveListener(listenerId string) {
@@ -41,10 +64,12 @@ func (t Id1ClientMock) RemoveListener(listenerId string) {
 }
 
 func (t Id1ClientMock) Send(cmd Command) error {
+	t.Exec(cmd)
 	return nil
 }
 
 func (t Id1ClientMock) Exec(cmd Command) ([]byte, error) {
+	t.cmdIn <- cmd
 	switch cmd.Op {
 	case Get:
 		return t.Get(cmd.Key)
@@ -63,22 +88,27 @@ func (t Id1ClientMock) Exec(cmd Command) ([]byte, error) {
 func (t Id1ClientMock) Get(key Id1Key) ([]byte, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	keys := *t.keys
-	return keys[key.String()], nil
+	keys := t.keys
+
+	if len(keys[key.String()]) == 0 {
+		return keys[key.String()], fmt.Errorf("not found")
+	} else {
+		return keys[key.String()], nil
+	}
+
 }
 
 func (t Id1ClientMock) Del(key Id1Key) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	keys := *t.keys
-	delete(keys, key.String())
-	t.keys = &keys
+	keys := t.keys
+	keys[key.String()] = []byte{}
 	return nil
 }
 func (t Id1ClientMock) Set(key Id1Key, data []byte) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	keys := *t.keys
+	keys := t.keys
 	keys[key.String()] = data
 	return nil
 }
@@ -86,7 +116,7 @@ func (t Id1ClientMock) Set(key Id1Key, data []byte) error {
 func (t Id1ClientMock) Add(key Id1Key, data []byte) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	keys := *t.keys
+	keys := t.keys
 	keys[key.String()] = slices.Concat(keys[key.String()], data)
 	return nil
 }
@@ -94,16 +124,16 @@ func (t Id1ClientMock) Add(key Id1Key, data []byte) error {
 func (t Id1ClientMock) Mov(key, tgtKey Id1Key) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	keys := *t.keys
+	keys := t.keys
 	keys[tgtKey.String()] = keys[key.String()]
-	delete(keys, key.String())
+	keys[key.String()] = []byte{}
 	return nil
 }
 
 func (t Id1ClientMock) List(key Id1Key, options ListOptions) (map[string][]byte, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	keys := *t.keys
+	keys := t.keys
 	return keys, nil
 
 }

@@ -2,34 +2,50 @@ package id1_client
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 	"net/url"
 )
 
+var opHttpMethod = map[Op]string{
+	Get: http.MethodGet,
+	Set: http.MethodPost,
+	Add: http.MethodPatch,
+	Mov: http.MethodPatch,
+	Del: http.MethodDelete,
+}
+
 func (t id1ClientHttp) Exec(cmd Command) ([]byte, error) {
-	switch cmd.Op {
-	case Get:
-		return t.Get(cmd.Key)
-	case Set:
-		args := url.Values{}
-		for arg := range cmd.Args {
-			args.Set(arg, cmd.Args[arg])
-		}
-		url := url.URL{
-			Scheme:   t.url.Scheme,
-			Path:     cmd.Key.String(),
-			RawQuery: args.Encode(),
-			Host:     t.url.Host,
-		}
-		req, _ := http.NewRequest(http.MethodPost, url.String(), bytes.NewReader(cmd.Data))
-		return []byte{}, t.do(req)
-	case Add:
-		return []byte{}, t.Add(cmd.Key, cmd.Data)
-	case Mov:
-		return []byte{}, t.Mov(cmd.Key, K(string(cmd.Data)))
-	case Del:
-		return []byte{}, t.Del(cmd.Key)
-	default:
-		return []byte{}, ErrUnexpected
+	args := url.Values{}
+	for arg := range cmd.Args {
+		args.Set(arg, cmd.Args[arg])
 	}
+	url := url.URL{
+		Scheme:   t.url.Scheme,
+		Path:     cmd.Key.String(),
+		RawQuery: args.Encode(),
+		Host:     t.url.Host,
+	}
+	req, err := http.NewRequest(opHttpMethod[cmd.Op], url.String(), bytes.NewReader(cmd.Data))
+	if err != nil {
+		return []byte{}, err
+	}
+
+	if cmd.Op == Mov {
+		req.Header.Add("X-Move-To", string(cmd.Data))
+	}
+
+	data := []byte{}
+	if res, err := t.doRes(req); err != nil {
+		return data, err
+	} else if err := httpStatusErr(res.StatusCode); err != nil {
+		return data, err
+	} else if body, err := io.ReadAll(res.Body); err != nil {
+		return data, err
+	} else {
+		data = body
+	}
+
+	return data, nil
+
 }

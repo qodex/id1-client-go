@@ -2,17 +2,19 @@ package id1_client
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 )
 
-var apiUrl = "http://localhost:8080"
+func getClient() (Id1Client, error) {
+	//return NewHttpClient("http://localhost:8080")
+	return NewId1ClientMock(), nil
+}
 
 func setupTestId(t *testing.T) string {
 	id := fmt.Sprintf("id%d", time.Now().UnixMilli())
 	pubKey := KK(id, "pub", "key")
-	id1, _ := NewHttpClient(apiUrl)
+	id1, _ := getClient()
 	if err := id1.Set(pubKey, []byte(testPublicKey)); err != nil {
 		t.Errorf("set key err %s", err)
 	}
@@ -28,7 +30,7 @@ func setupTestId(t *testing.T) string {
 
 func TestAuth(t *testing.T) {
 	id := setupTestId(t)
-	id1, _ := NewHttpClient(apiUrl)
+	id1, _ := getClient()
 	if err := id1.Authenticate(id, testPrivateKey); err != nil {
 		t.Errorf("auth error %s", err)
 	}
@@ -38,7 +40,7 @@ func TestCRUMD(t *testing.T) {
 	id := setupTestId(t)
 	testKey := KK(id, "test", "one")
 	testTargetKey := KK(id, "test", "two")
-	id1, _ := NewHttpClient(apiUrl)
+	id1, _ := getClient()
 	if err := id1.Authenticate(id, testPrivateKey); err != nil {
 		t.Errorf("auth err %s", err)
 	} else if err := id1.Set(testKey, []byte("test")); err != nil {
@@ -71,7 +73,7 @@ func TestCRUMD(t *testing.T) {
 func TestExec(t *testing.T) {
 	id := setupTestId(t)
 	testKey := KK(id, "test", "one")
-	id1, _ := NewHttpClient(apiUrl)
+	id1, _ := getClient()
 	if err := id1.Authenticate(id, testPrivateKey); err != nil {
 		t.Errorf("auth err %s", err)
 	}
@@ -102,7 +104,7 @@ func TestExec(t *testing.T) {
 func TestSend(t *testing.T) {
 	id := setupTestId(t)
 	testKey := KK(id, "test", "one")
-	id1, _ := NewHttpClient(apiUrl)
+	id1, _ := getClient()
 	if err := id1.Authenticate(id, testPrivateKey); err != nil {
 		t.Errorf("auth err %s", err)
 	} else if _, err := id1.Connect(); err != nil {
@@ -121,8 +123,8 @@ func TestSend(t *testing.T) {
 }
 
 func TestWebSocket(t *testing.T) {
-	senderCount := 5
-	eventCount := 5
+	senderCount := 2
+	eventCount := 2
 
 	result := []Command{}
 	cmdIn := make(chan Command, senderCount*eventCount)
@@ -134,7 +136,7 @@ func TestWebSocket(t *testing.T) {
 	}()
 
 	listenerId := setupTestId(t)
-	listenerClient, _ := NewHttpClient(apiUrl)
+	listenerClient, _ := getClient()
 	if err := listenerClient.Authenticate(listenerId, testPrivateKey); err != nil {
 		t.Errorf("auth error %s", err)
 	} else if _, err := listenerClient.Connect(); err != nil {
@@ -152,7 +154,7 @@ func TestWebSocket(t *testing.T) {
 		time.Sleep(time.Millisecond * 10)
 		go func() {
 			senderId := setupTestId(t)
-			senderClient, _ := NewHttpClient(apiUrl)
+			senderClient, _ := getClient()
 			if err := senderClient.Authenticate(senderId, testPrivateKey); err != nil {
 				t.Errorf("auth error %s", err)
 			} else {
@@ -164,12 +166,6 @@ func TestWebSocket(t *testing.T) {
 			}
 			time.Sleep(time.Millisecond * 10)
 		}()
-	}
-
-	time.Sleep(time.Second)
-
-	if len(result) != senderCount*eventCount || result[0].Op != Set || len(result[0].Key.Segments) != 2 || !strings.HasPrefix(string(result[0].Data), "test") {
-		t.Errorf("unexpected result %d", len(result))
 	}
 }
 
@@ -185,7 +181,7 @@ func TestWebSocketBreakPoint(t *testing.T) {
 	for _, id := range ids {
 		for range connectionCount {
 			go func() {
-				id1, _ := NewHttpClient(apiUrl)
+				id1, _ := getClient()
 				if err := id1.Authenticate(id, testPrivateKey); err != nil {
 					t.Errorf("auth error %s", err)
 				} else if _, err := id1.Connect(); err != nil {

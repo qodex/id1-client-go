@@ -42,7 +42,6 @@ func (t id1ClientHttp) do(req *http.Request) error {
 }
 
 func (t id1ClientHttp) doRes(req *http.Request) (*http.Response, error) {
-	//log.Println("doRes---", (*req).URL.Path)
 	if t.token != nil && len(*t.token) > 0 {
 		req.Header.Add("Authorization", *t.token)
 	}
@@ -55,5 +54,49 @@ func (t id1ClientHttp) doRes(req *http.Request) (*http.Response, error) {
 		}
 	case <-time.After(time.Second):
 		return nil, ErrTimeout
+	}
+}
+
+func (t id1ClientHttp) Send(cmd Command) error {
+	t.cmdOut <- cmd
+	return nil
+}
+
+func (t id1ClientHttp) Set(key Id1Key, data []byte) error {
+	_, err := t.Exec(Command{Op: Set, Key: key, Data: data})
+	return err
+}
+
+func (t id1ClientHttp) Add(key Id1Key, data []byte) error {
+	_, err := t.Exec(Command{Op: Add, Key: key, Data: data})
+	return err
+}
+
+func (t id1ClientHttp) Get(key Id1Key) ([]byte, error) {
+	data, err := t.Exec(Command{Op: Get, Key: key})
+	return data, err
+}
+
+func (t id1ClientHttp) Del(key Id1Key) error {
+	_, err := t.Exec(Command{Op: Del, Key: key})
+	return err
+}
+
+func (t id1ClientHttp) Mov(src, tgt Id1Key) error {
+	_, err := t.Exec(Command{Op: Mov, Key: src, Data: []byte(tgt.String())})
+	return err
+}
+
+func (t id1ClientHttp) List(key Id1Key, options ListOptions) (map[string][]byte, error) {
+	if data, err := t.Exec(Command{Op: Get, Key: K(key.String() + "*"), Args: options.Map()}); err != nil {
+		return map[string][]byte{}, err
+	} else {
+		return decodeList(data), nil
+	}
+}
+
+func (t id1ClientHttp) Close() {
+	if t.conn != nil {
+		t.conn.Close()
 	}
 }

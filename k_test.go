@@ -17,3 +17,10 @@ func TestMap(t *testing.T) {
 		t.Errorf("err no map res %s", noMap)
 	}
 }
+
+func TestParent(t *testing.T) {
+	k := K("test1/cmd/test2/123")
+	if k.Parent().Name != "test2" {
+		t.Errorf("unexpected Parent %s", k.Parent())
+	}
+}

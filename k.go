@@ -12,8 +12,6 @@ import (
 type Id1Key struct {
 	Id       string
 	Name     string
-	Parent   string
-	Pub      bool
 	Segments []string
 }
 
@@ -25,6 +23,14 @@ func (t Id1Key) String() string {
 	str = strings.Trim(str, "\n")
 	str = strings.Trim(str, " ")
 	return str
+}
+
+func (t Id1Key) Parent() Id1Key {
+	if len(t.Segments) > 1 {
+		return KK(t.Segments[:len(t.Segments)-1]...)
+	} else {
+		return K("")
+	}
 }
 
 // export env_ids="one\ntwo"
@@ -78,30 +84,11 @@ func K(s string) Id1Key {
 	k.Id = k.Segments[0]
 	k.Name = k.Segments[len(k.Segments)-1]
 
-	if len(k.Segments) > 1 {
-		k.Parent = strings.Join(k.Segments[:len(k.Segments)-1], "/")
-	}
-	if len(k.Segments) > 1 {
-		k.Pub = k.Segments[1] == "pub"
-	}
-
 	return k
 }
 
-func KK(segments ...any) Id1Key {
-	strSegments := []string{}
-	for _, seg := range segments {
-		if s, ok := seg.(string); ok {
-			strSegments = append(strSegments, s)
-		}
-		if i, ok := seg.(int); ok {
-			strSegments = append(strSegments, fmt.Sprintf("%d", i))
-		}
-		if stringer, ok := seg.(fmt.Stringer); ok {
-			strSegments = append(strSegments, stringer.String())
-		}
-	}
-	return K(strings.Join(strSegments, "/"))
+func KK(segments ...string) Id1Key {
+	return K(strings.Join(segments, "/"))
 }
 
 // if input is []string{"one\ntwo", "three\nfour"},

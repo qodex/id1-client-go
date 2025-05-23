@@ -42,6 +42,7 @@ func (t Id1Key) Map(keymap string) []Id1Key {
 		keys = append(keys, t)
 		return keys
 	}
+	keymap = strings.ReplaceAll(keymap, "*", t.String())
 
 	kmask := K(keymap)
 	segNumRE, _ := regexp.Compile(`^\$\d+$`)
